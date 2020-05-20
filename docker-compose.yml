@@ -1,0 +1,60 @@
+version: '3.7'
+
+networks:
+  reactnet:
+
+services:
+  nginxser:
+    image: nginx:stable-alpine
+    container_name: nginxser
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - mongodb
+      - backend
+      - front
+    networks:
+      - reactnet
+
+  mongodb:
+    image: mongo:4.0-xenial
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    networks:
+      - reactnet
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: backend
+    working_dir: /app
+    depends_on: 
+      - mongodb
+    networks:
+      - reactnet
+    environment:
+      - NODE_ENV=production
+    expose: 
+      - "3001"
+
+  front:
+    build:
+      context: .
+      dockerfile: front.Dockerfile
+    container_name: front
+    working_dir: /app
+    depends_on: 
+      - backend
+    networks:
+      - reactnet
+    environment:
+      - NODE_ENV=production
+    expose:
+      - "3000"
